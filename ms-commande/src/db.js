@@ -1,94 +1,65 @@
-// Import des fonctions principales de RxDB
+// Import de RxDB
 const { createRxDatabase } = require('rxdb');
 
-// Storage en mémoire pour RxDB
-// (simple pour un mini-projet et facile à tester)
+// Storage mémoire pour simplifier le projet
 const { getRxStorageMemory } = require('rxdb/plugins/storage-memory');
 
-
-// Variable globale pour éviter de recréer la DB plusieurs fois
+// Une seule instance de base pour éviter de recréer la DB
 let dbInstance = null;
-
 
 // Fonction d'initialisation de la base de données
 async function initDB() {
-
-  // Si la DB existe déjà, on la retourne directement
+  // Si la base existe déjà, on la retourne
   if (dbInstance) {
     return dbInstance;
   }
 
   // Création de la base RxDB
   const db = await createRxDatabase({
-
-    // Nom de la base
     name: 'ordersdb',
-
-    // Type de stockage utilisé
     storage: getRxStorageMemory()
   });
 
-
-  // Création des collections
+  // Création de la collection orders
   await db.addCollections({
-
-    // Collection des commandes
     orders: {
-
-      // Schéma JSON de la collection
       schema: {
-
-        // Nom du schéma
         title: 'orders schema',
-
-        // Version du schéma
+        description: 'Schema de la collection des commandes',
         version: 0,
-
-        // Clé primaire
         primaryKey: 'id',
-
-        // Type principal
         type: 'object',
 
-        // Définition des champs
         properties: {
-
-          // ID unique de la commande
+          // Clé primaire
+          // IMPORTANT : RxDB exige maxLength pour une clé primaire string
           id: {
-            type: 'string'
+            type: 'string',
+            maxLength: 100
           },
 
-          // ID de l'utilisateur
+          // Identifiant de l'utilisateur
           userId: {
             type: 'string'
           },
 
-          // Liste des produits commandés
+          // Liste des produits dans la commande
           items: {
-
             type: 'array',
-
             items: {
-
               type: 'object',
-
               properties: {
-
-                // ID du produit
                 productId: {
                   type: 'string'
                 },
-
-                // Quantité commandée
                 qty: {
                   type: 'number'
                 },
-
-                // Prix unitaire du produit
                 unitPrice: {
                   type: 'number'
                 }
-              }
+              },
+              required: ['productId', 'qty', 'unitPrice']
             }
           },
 
@@ -98,11 +69,6 @@ async function initDB() {
           },
 
           // Statut de la commande
-          // Exemples :
-          // pending
-          // confirmed
-          // cancelled
-          // payment_failed
           status: {
             type: 'string'
           },
@@ -112,7 +78,7 @@ async function initDB() {
             type: 'string'
           },
 
-          // Date de dernière modification
+          // Date de mise à jour
           updatedAt: {
             type: 'string'
           }
@@ -132,17 +98,13 @@ async function initDB() {
     }
   });
 
-
-  // Sauvegarde de l'instance de la DB
+  // Sauvegarde de l'instance
   dbInstance = db;
 
   console.log('RxDB Orders initialized');
 
-
-  // Retourne la DB
   return db;
 }
 
-
-// Export de la fonction
+// Export de la fonction initDB
 module.exports = initDB;
