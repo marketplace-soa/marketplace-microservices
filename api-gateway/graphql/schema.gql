@@ -1,0 +1,59 @@
+type OrderItem {
+  product_id: String
+  qty: Int
+  unit_price: Float
+}
+
+type Order {
+  id: String
+  user_id: String
+  items: [OrderItem]
+  total_amount: Float
+  status: String
+  created_at: String
+  updated_at: String
+}
+
+type Notification {
+  id: String
+  user_id: String
+  type: String
+  message: String
+  read: Boolean
+  created_at: String
+}
+
+input OrderItemInput {
+  product_id: String
+  qty: Int
+  unit_price: Float
+}
+
+type Query {
+  order(id: String!): Order
+  orders(user_id: String!): [Order]
+  notifications(user_id: String!): [Notification]
+  unreadCount(user_id: String!): Int
+}
+
+type Mutation {
+  createOrder(
+    user_id: String!
+    items: [OrderItemInput!]!
+    total_amount: Float!
+  ): Order
+
+  updateOrderStatus(
+    id: String!
+    status: String!
+  ): Order
+
+  cancelOrder(
+    id: String!
+    reason: String
+  ): Order
+
+  markNotificationAsRead(
+    notification_id: String!
+  ): Notification
+}
