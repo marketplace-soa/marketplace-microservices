@@ -1,4 +1,4 @@
-// Serveur gRPC pour MS Produit
+// Serveur gRPC pour MS Produit point d’accès officiel pour d’autres services (et API Gateway plus tard).
 
 const grpc = require('@grpc/grpc-js');
 const protoLoader = require('@grpc/proto-loader');
@@ -52,6 +52,7 @@ const handlers = {
   CreateProduct: async (call, callback) => {
     try {
       const product = productService.createProduct(call.request);
+
       // Publier dans Kafka
       await kafka.publishProductCreated(product);
       callback(null, { product });
@@ -63,6 +64,7 @@ const handlers = {
   UpdateStock: async (call, callback) => {
     try {
       const product = productService.updateStock(call.request.id, call.request.quantity);
+      
       // Publier événements Kafka
       await kafka.publishStockUpdated(product);
       await kafka.publishStockLow(product);

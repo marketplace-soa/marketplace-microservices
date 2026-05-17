@@ -1,4 +1,3 @@
-// productService.js
 // Module métier pour MS Produit
 
 const db = require('./db');
