@@ -2,41 +2,31 @@
 // IMPORTS
 // =============================
 
-// Framework Express
 const express = require('express');
-
-// Middleware CORS pour autoriser les requêtes externes
-const cors = require('cors');
-
-// Apollo Server pour GraphQL
-const { ApolloServer } = require('@apollo/server');
-
-// Middleware Apollo pour Express v4
+const cors    = require('cors');
+const fs      = require('fs');
+const path    = require('path');
+const { ApolloServer }      = require('@apollo/server');
 const { expressMiddleware } = require('@as-integrations/express4');
-
-// Module File System pour lire schema.gql
-const fs = require('fs');
-
-// Module path pour gérer les chemins
-const path = require('path');
 
 
 // =============================
 // IMPORT ROUTES REST
 // =============================
 
-// Routes REST des commandes
-const ordersRoutes = require('../rest/routes/orders');
-
-// Routes REST des notifications
+// Membre 2 — Commande + Notification
+const ordersRoutes        = require('../rest/routes/orders');
 const notificationsRoutes = require('../rest/routes/notifications');
+
+// Membre 1 — Produit + Paiement
+const productsRoutes      = require('../rest/routes/products');
+const paymentsRoutes      = require('../rest/routes/payments');
 
 
 // =============================
 // IMPORT GRAPHQL RESOLVERS
 // =============================
 
-// Resolvers GraphQL
 const resolvers = require('../graphql/resolvers');
 
 
@@ -45,13 +35,9 @@ const resolvers = require('../graphql/resolvers');
 // =============================
 async function startServer() {
 
-  // Création de l'application Express
   const app = express();
 
-  // Middleware CORS
   app.use(cors());
-
-  // Middleware JSON
   app.use(express.json());
 
 
@@ -59,20 +45,46 @@ async function startServer() {
   // ROUTES REST
   // =============================
 
-  // Routes REST commandes
-  app.use('/orders', ordersRoutes);
-
-  // Routes REST notifications
+  // Membre 2
+  app.use('/orders',        ordersRoutes);
   app.use('/notifications', notificationsRoutes);
 
+  // Membre 1
+  app.use('/products',      productsRoutes);
+  app.use('/payments',      paymentsRoutes);
+
 
   // =============================
-  // ROUTE TEST API
+  // ROUTE SANTÉ — GET /
   // =============================
   app.get('/', (req, res) => {
-
     res.json({
-      message: 'API Gateway running'
+      message: 'API Gateway — Marketplace Microservices',
+
+      // Membre 2
+      rest_m2: {
+        orders:        'GET  /orders',
+        order:         'GET  /orders/:id',
+        createOrder:   'POST /orders',
+        cancelOrder:   'PATCH /orders/:id/cancel',
+        notifications: 'GET  /notifications/:userId',
+        unread:        'GET  /notifications/:userId/unread'
+      },
+
+      // Membre 1
+      rest_m1: {
+        products:      'GET  /products',
+        product:       'GET  /products/:id',
+        promos:        'GET  /products/promo',
+        search:        'GET  /products/search/:query',
+        createProduct: 'POST /products',
+        updateStock:   'PATCH /products/:id/stock',
+        payment:       'GET  /payments/:orderId',
+        processPayment:'POST /payments',
+        refund:        'POST /payments/:paymentId/refund'
+      },
+
+      graphql: 'POST /graphql'
     });
   });
 
@@ -81,36 +93,17 @@ async function startServer() {
   // GRAPHQL
   // =============================
 
-  // Lecture du fichier schema.gql
   const typeDefs = fs.readFileSync(
-
     path.join(__dirname, '../graphql/schema.gql'),
-
     'utf8'
   );
 
-  // Création du serveur Apollo GraphQL
-  const apolloServer = new ApolloServer({
+  const apolloServer = new ApolloServer({ typeDefs, resolvers });
 
-    // Schéma GraphQL
-    typeDefs,
-
-    // Resolvers GraphQL
-    resolvers
-  });
-
-  // Démarrage Apollo
   await apolloServer.start();
 
-
-  // =============================
-  // ENDPOINT GRAPHQL
-  // =============================
   app.use(
-
     '/graphql',
-
-    // Middleware Apollo
     expressMiddleware(apolloServer)
   );
 
@@ -121,12 +114,12 @@ async function startServer() {
   const PORT = 3000;
 
   app.listen(PORT, () => {
-
     console.log(`API Gateway running on port ${PORT}`);
-
-    console.log(
-      `GraphQL endpoint: http://localhost:${PORT}/graphql`
-    );
+    console.log(`REST     → http://localhost:${PORT}/products`);
+    console.log(`REST     → http://localhost:${PORT}/payments`);
+    console.log(`REST     → http://localhost:${PORT}/orders`);
+    console.log(`REST     → http://localhost:${PORT}/notifications`);
+    console.log(`GraphQL  → http://localhost:${PORT}/graphql`);
   });
 }
 
@@ -135,6 +128,5 @@ async function startServer() {
 // DÉMARRAGE APPLICATION
 // =============================
 startServer().catch((error) => {
-
-  console.error(error);
+  console.error('Erreur démarrage Gateway:', error);
 });

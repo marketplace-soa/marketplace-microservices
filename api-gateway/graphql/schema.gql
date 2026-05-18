@@ -1,3 +1,7 @@
+# ─────────────────────────────────────────────
+# Types — Membre 2 (Commande + Notification)
+# ─────────────────────────────────────────────
+
 type OrderItem {
   product_id: String
   qty: Int
@@ -29,14 +33,62 @@ input OrderItemInput {
   unit_price: Float
 }
 
+# ─────────────────────────────────────────────
+# Types — Membre 1 (Produit + Paiement)
+# ─────────────────────────────────────────────
+
+type Product {
+  id: String!
+  name: String!
+  description: String
+  price: Float!
+  stock: Int!
+  category: String!
+  promo_price: Float
+  promo_expires_at: String
+  is_on_promo: Boolean
+  created_at: String
+}
+
+type Payment {
+  id: String!
+  order_id: String!
+  amount: Float!
+  status: String!
+  method: String!
+  created_at: String
+  updated_at: String
+}
+
+# ─────────────────────────────────────────────
+# Queries — toutes fusionnées en un seul bloc
+# ─────────────────────────────────────────────
+
 type Query {
+
+  # ── Membre 2 — Commande + Notification ──
   order(id: String!): Order
   orders(user_id: String!): [Order]
   notifications(user_id: String!): [Notification]
   unreadCount(user_id: String!): Int
+
+  # ── Membre 1 — Produit ──────────────────
+  product(id: String!): Product
+  products(category: String): [Product]
+  promoProducts: [Product]
+  searchProducts(query: String!): [Product]
+
+  # ── Membre 1 — Paiement ─────────────────
+  paymentStatus(orderId: String!): Payment
 }
 
+# ─────────────────────────────────────────────
+# Mutations — toutes fusionnées en un seul bloc
+# ─────────────────────────────────────────────
+
 type Mutation {
+
+  # ── Membre 2 — Commande ─────────────────
   createOrder(
     user_id: String!
     items: [OrderItemInput!]!
@@ -53,7 +105,35 @@ type Mutation {
     reason: String
   ): Order
 
+  # ── Membre 2 — Notification ─────────────
   markNotificationAsRead(
     notification_id: String!
   ): Notification
+
+  # ── Membre 1 — Produit ──────────────────
+  createProduct(
+    name: String!
+    description: String
+    price: Float!
+    stock: Int!
+    category: String!
+    promo_price: Float
+    promo_expires_at: String
+  ): Product
+
+  updateStock(
+    id: String!
+    quantity: Int!
+  ): Product
+
+  # ── Membre 1 — Paiement ─────────────────
+  processPayment(
+    order_id: String!
+    amount: Float!
+    method: String!
+  ): Payment
+
+  refundPayment(
+    paymentId: String!
+  ): Payment
 }

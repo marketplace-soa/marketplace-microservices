@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package payment;
 
-// Représente un paiement
 message Payment {
   string id = 1;
   string order_id = 2;
@@ -13,7 +12,6 @@ message Payment {
   string updated_at = 7;
 }
 
-// Paiement manuel via Gateway
 message ProcessPaymentRequest {
   string order_id = 1;
   double amount = 2;
@@ -24,7 +22,6 @@ message ProcessPaymentResponse {
   Payment payment = 1;
 }
 
-// Consulter le paiement d'une commande
 message GetPaymentStatusRequest {
   string order_id = 1;
 }
@@ -33,7 +30,6 @@ message GetPaymentStatusResponse {
   Payment payment = 1;
 }
 
-// Rembourser un paiement
 message RefundPaymentRequest {
   string payment_id = 1;
 }
@@ -42,7 +38,6 @@ message RefundPaymentResponse {
   Payment payment = 1;
 }
 
-// Service gRPC du microservice Paiement
 service PaymentService {
   rpc ProcessPayment(ProcessPaymentRequest) returns (ProcessPaymentResponse);
   rpc GetPaymentStatus(GetPaymentStatusRequest) returns (GetPaymentStatusResponse);
