@@ -14,9 +14,18 @@ const producer = kafka.producer();
 
 // 3.Fonction pour connecter le producteur
 //  Doit être awaitée avant de démarrer le serveur gRPC
-const connectProducer = async () => {
-  await producer.connect(); // connexion asynchrone
-  console.log('Kafka Producer connecté pour MS Paiement');
+const connectProducer = async (retries = 5, delay = 3000) => {
+  for (let i = 1; i <= retries; i++) {
+    try {
+      await producer.connect();
+      console.log('Kafka Producer connecté pour MS Paiement');
+      return; // connexion réussie — on sort
+    } catch (err) {
+      console.warn(`Tentative ${i}/${retries} échouée — retry dans ${delay/1000}s`);
+      if (i === retries) throw err; // toutes les tentatives épuisées
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
 };
 
 // 4. Fonction pour publier paiement réussi
