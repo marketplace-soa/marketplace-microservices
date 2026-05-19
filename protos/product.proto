@@ -12,7 +12,8 @@ message Product {
   string category = 6;
   double promo_price = 7;
   string promo_expires_at = 8;
-  string created_at = 9;
+  bool is_on_promo = 9;
+  string created_at = 10;
 }
 
 // Requête pour récupérer un produit par id

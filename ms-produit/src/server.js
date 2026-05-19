@@ -23,6 +23,19 @@ const packageDef = protoLoader.loadSync(PROTO_PATH, {
 const grpcObject = grpc.loadPackageDefinition(packageDef);
 const productProto = grpcObject.product;
 
+// Helper — ajoute is_on_promo calculé à un produit
+function enrichProduct(p) {
+  if (!p) return p;
+  return {
+    ...p,
+    is_on_promo: !!(p.promo_price && p.promo_expires_at && new Date(p.promo_expires_at) > new Date())
+  };
+}
+
+function enrichProducts(products) {
+  return (products || []).map(enrichProduct);
+}
+
 // Handlers gRPC
 const handlers = {
   GetProduct: (call, callback) => {
@@ -34,7 +47,7 @@ const handlers = {
           message: 'Product not found'
         });
       }
-      callback(null, { product });
+      callback(null, { product: enrichProduct(product) });
     } catch (err) {
       callback({ code: grpc.status.INTERNAL, message: err.message });
     }
@@ -43,7 +56,7 @@ const handlers = {
   ListProducts: (call, callback) => {
     try {
       const products = productService.listProducts(call.request.category);
-      callback(null, { products });
+      callback(null, { products: enrichProducts(products) });
     } catch (err) {
       callback({ code: grpc.status.INTERNAL, message: err.message });
     }
@@ -55,7 +68,7 @@ const handlers = {
 
       // Publier dans Kafka
       await kafka.publishProductCreated(product);
-      callback(null, { product });
+      callback(null, { product: enrichProduct(product) });
     } catch (err) {
       callback({ code: grpc.status.INTERNAL, message: err.message });
     }
@@ -68,7 +81,7 @@ const handlers = {
       // Publier événements Kafka
       await kafka.publishStockUpdated(product);
       await kafka.publishStockLow(product);
-      callback(null, { product });
+      callback(null, { product: enrichProduct(product) });
     } catch (err) {
       callback({ code: grpc.status.INTERNAL, message: err.message });
     }
@@ -77,7 +90,7 @@ const handlers = {
   SearchProducts: (call, callback) => {
     try {
       const products = productService.searchProducts(call.request.query);
-      callback(null, { products });
+      callback(null, { products: enrichProducts(products) });
     } catch (err) {
       callback({ code: grpc.status.INTERNAL, message: err.message });
     }
@@ -86,7 +99,7 @@ const handlers = {
   GetPromoProducts: (call, callback) => {
     try {
       const products = productService.getPromoProducts();
-      callback(null, { products });
+      callback(null, { products: enrichProducts(products) });
     } catch (err) {
       callback({ code: grpc.status.INTERNAL, message: err.message });
     }

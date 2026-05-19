@@ -4,13 +4,10 @@ const { Kafka } = require('kafkajs');
 // 1. Créer l’instance Kafka
 // clientId = nom du microservice pour l’identifier
 // brokers = liste de brokers Kafka
-const kafka = new Kafka({
-  clientId: 'ms-paiement',
-  brokers: ['localhost:9092']
-});
+const kafka = require('./kafkaClient');
 
 // 2. Créer le producteur
-const producer = kafka.producer();
+const producer = kafka.producer({ timeout: 30000 });
 
 // 3.Fonction pour connecter le producteur
 //  Doit être awaitée avant de démarrer le serveur gRPC
@@ -30,37 +27,41 @@ const connectProducer = async (retries = 5, delay = 3000) => {
 
 // 4. Fonction pour publier paiement réussi
 const publishPaymentCompleted = async (payment) => {
-  await producer.send({
-    topic: 'payment.events',         // Topic Kafka cible
-    messages: [
-      {
-        value: JSON.stringify({      // Convertir l’objet en JSON
-          type: 'payment.completed', // Type d’événement
-          ...payment                  // Toutes les infos du paiement
-        })
-      }
-    ]
-  });
+  try {
+    await producer.send({
+      topic: 'payment.events',
+      messages: [{ value: JSON.stringify({ type: 'payment.completed', ...payment }) }]
+    });
+    console.log(' payment.completed publié — order_id:', payment.order_id);
+  } catch (err) {
+    console.error(' Erreur publication payment.events:', err.message);
+  }
 };
 
 // 5. Fonction pour publier paiement échoué
 const publishPaymentFailed = async (payment) => {
-  await producer.send({
-    topic: 'payment.events',
-    messages: [
-      { value: JSON.stringify({ type: 'payment.failed', ...payment }) }
-    ]
-  });
+  try {
+    await producer.send({
+      topic: 'payment.events',
+      messages: [{ value: JSON.stringify({ type: 'payment.failed', ...payment }) }]
+    });
+    console.log('payment.failed publié — order_id:', payment.order_id);
+  } catch (err) {
+    console.error(' Erreur publication payment.events:', err.message);
+  }
 };
 
 // 6. Fonction pour publier paiement remboursé
 const publishPaymentRefunded = async (payment) => {
-  await producer.send({
-    topic: 'payment.events',
-    messages: [
-      { value: JSON.stringify({ type: 'payment.refunded', ...payment }) }
-    ]
-  });
+  try {
+    await producer.send({
+      topic: 'payment.events',
+      messages: [{ value: JSON.stringify({ type: 'payment.refunded', ...payment }) }]
+    });
+    console.log('payment.refunded publié — order_id:', payment.order_id);
+  } catch (err) {
+    console.error('Erreur publication payment.events:', err.message);
+  }
 };
 
 // Exporter le producteur et les fonctions

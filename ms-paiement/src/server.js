@@ -40,9 +40,10 @@ server.addService(paymentProto.PaymentService.service, {
 
       const payment = paymentService.processPayment(order_id, amount, method);
 
-      if (!payment || !payment.id)  
+      if (!payment || !payment.id) {
         console.error("Erreur: payment est undefined ou id manquant");
         return callback({ code: grpc.status.INTERNAL, message: 'Payment not created' });
+      }
 
       if (payment.status === 'completed') {
         await publishPaymentCompleted(payment);
